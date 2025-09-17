@@ -1,0 +1,12 @@
+{
+  "buildCommand": "cd apps/studio && pnpm build",
+  "outputDirectory": "apps/studio/.next",
+  "installCommand": "pnpm install",
+  "framework": "nextjs",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/apps/studio/$1"
+    }
+  ]
+}
