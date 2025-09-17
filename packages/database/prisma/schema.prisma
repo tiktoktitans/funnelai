@@ -1,0 +1,185 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  name          String?
+  avatarUrl     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  projects      Project[]
+}
+
+model Project {
+  id            String    @id @default(uuid())
+  userId        String
+  name          String
+  slug          String    @unique
+  templateKey   String    @default("webinar")
+  templateVersion String  @default("1.0.0")
+  status        ProjectStatus @default(DRAFT)
+  repoUrl       String?
+  vercelUrl     String?
+  brandColors   Json?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  specs         Spec[]
+  integrations  Integration[]
+  builds        Build[]
+  forms         Form[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([slug])
+}
+
+enum ProjectStatus {
+  DRAFT
+  BUILDING
+  DEPLOYED
+  FAILED
+}
+
+model Spec {
+  id            String    @id @default(uuid())
+  projectId     String
+  type          SpecType
+  input         Json
+  content       Json
+  structure     Json
+  version       String    @default("1.0.0")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, type])
+  @@index([projectId])
+}
+
+enum SpecType {
+  LANDING
+  WEBINAR
+  VSL
+  THANKYOU
+  APPLICATION
+  EMAILS
+  SMS
+}
+
+model Integration {
+  id            String    @id @default(uuid())
+  projectId     String
+  provider      IntegrationProvider
+  config        Json
+  encryptedConfig String?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, provider])
+  @@index([projectId])
+}
+
+enum IntegrationProvider {
+  CALENDLY
+  RESEND
+  TWILIO
+  PIXELS
+  VERCEL
+  GITHUB
+}
+
+model Build {
+  id            String    @id @default(uuid())
+  projectId     String
+  status        BuildStatus
+  branch        String?
+  commitSha     String?
+  vercelDeployUrl String?
+  logs          String?
+  error         String?
+  metadata      Json?
+  createdAt     DateTime  @default(now())
+  finishedAt    DateTime?
+
+  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum BuildStatus {
+  QUEUED
+  RUNNING
+  SUCCESS
+  FAILED
+  CANCELLED
+}
+
+model Form {
+  id            String    @id @default(uuid())
+  projectId     String
+  kind          FormKind
+  name          String
+  schema        Json
+  destination   Json?
+  settings      Json?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  submissions   Submission[]
+
+  @@unique([projectId, kind])
+  @@index([projectId])
+}
+
+enum FormKind {
+  OPTIN
+  APPLICATION
+  CONTACT
+  SURVEY
+}
+
+model Submission {
+  id            String    @id @default(uuid())
+  formId        String
+  projectId     String
+  data          Json
+  source        String?
+  ip            String?
+  userAgent     String?
+  metadata      Json?
+  createdAt     DateTime  @default(now())
+
+  form          Form      @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@index([formId])
+  @@index([projectId])
+  @@index([createdAt])
+}
+
+model ApiKey {
+  id            String    @id @default(uuid())
+  name          String
+  key           String    @unique
+  lastUsedAt    DateTime?
+  expiresAt     DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([key])
+}
