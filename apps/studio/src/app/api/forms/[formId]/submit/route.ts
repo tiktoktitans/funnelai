@@ -3,7 +3,7 @@ import { prisma } from '@funnelai/database';
 import { Resend } from 'resend';
 import { z } from 'zod';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 const SubmissionSchema = z.object({
   name: z.string().min(1).max(100),
@@ -80,6 +80,10 @@ export async function POST(
 
 async function sendNotificationEmail(form: any, data: any) {
   try {
+    if (!resend) {
+      console.log('Resend not configured, skipping email notification');
+      return;
+    }
     const destination = form.destination || { email: 'demo@funnelai.com' };
 
     await resend.emails.send({
@@ -111,6 +115,10 @@ async function sendNotificationEmail(form: any, data: any) {
 
 async function sendConfirmationEmail(email: string, projectName: string) {
   try {
+    if (!resend) {
+      console.log('Resend not configured, skipping confirmation email');
+      return;
+    }
     await resend.emails.send({
       from: 'FunnelAI <noreply@funnelai.com>',
       to: email,
