@@ -1,5 +1,7 @@
 {
-  "buildCommand": "turbo run build --filter=@funnelai/studio",
+  "buildCommand": "pnpm turbo build --filter=@funnelai/studio",
   "installCommand": "pnpm install",
-  "outputDirectory": "apps/studio/.next"
+  "outputDirectory": "apps/studio/.next",
+  "framework": "nextjs",
+  "public": true
 }
