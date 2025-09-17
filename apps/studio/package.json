@@ -4,11 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev --port 3000",
-    "build": "cd ../../packages/database && prisma generate && cd ../../apps/studio && next build",
+    "build": "cd ../../packages/database && npx prisma generate && cd ../../apps/studio && next build",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "postinstall": "cd ../../packages/database && prisma generate || true"
+    "postinstall": "cd ../../packages/database && npx prisma generate || true"
   },
   "dependencies": {
     "@funnelai/database": "workspace:*",
