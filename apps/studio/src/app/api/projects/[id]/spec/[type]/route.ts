@@ -13,7 +13,7 @@ const SPEC_TYPE_MAP: Record<string, SpecType> = {
 };
 
 export async function POST(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { id: string; type: string } }
 ) {
   try {
@@ -79,7 +79,7 @@ export async function POST(
       },
       data: {
         content,
-        structure: content.structure || {},
+        structure: (content as any).structure || {},
       },
     });
 

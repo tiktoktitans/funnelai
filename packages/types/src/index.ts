@@ -153,12 +153,14 @@ export interface Section {
 }
 
 export interface BuildConfig {
+  buildId?: string;
   projectId: string;
   projectSlug: string;
   specs: Record<string, any>;
   integrations: Record<string, any>;
   templateKey: string;
   templateVersion: string;
+  brandColors?: any;
 }
 
 export interface DeploymentResult {

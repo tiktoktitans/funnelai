@@ -123,7 +123,7 @@ export function BuildPanel({ project }: BuildPanelProps) {
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Before you deploy</AlertTitle>
             <AlertDescription>
-              Make sure you've reviewed all content and configured your integrations.
+              Make sure you&apos;ve reviewed all content and configured your integrations.
               The deployment process will create a live website accessible to anyone.
             </AlertDescription>
           </Alert>
@@ -244,7 +244,7 @@ export function BuildPanel({ project }: BuildPanelProps) {
 
             {(!project.builds || project.builds.length === 0) && !buildStatus && (
               <p className="text-center py-8 text-muted-foreground">
-                No builds yet. Click "Build & Deploy" to create your first deployment.
+                No builds yet. Click &quot;Build & Deploy&quot; to create your first deployment.
               </p>
             )}
           </div>
