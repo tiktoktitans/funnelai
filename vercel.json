@@ -1,6 +1,0 @@
-{
-  "buildCommand": "pnpm build",
-  "installCommand": "pnpm install",
-  "framework": null,
-  "rootDirectory": "apps/studio"
-}
