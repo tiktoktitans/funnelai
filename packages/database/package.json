@@ -12,6 +12,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.0.1",
+    "@prisma/adapter-neon": "^6.16.2",
     "@prisma/client": "^5.8.1",
     "@supabase/supabase-js": "^2.39.3"
   },
