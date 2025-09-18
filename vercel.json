@@ -3,22 +3,5 @@
   "installCommand": "pnpm install",
   "outputDirectory": "apps/studio/.next",
   "framework": "nextjs",
-  "public": true,
-  "env": {
-    "DATABASE_URL": "@database-url",
-    "DIRECT_URL": "@direct-url",
-    "SUPABASE_URL": "@supabase-url",
-    "SUPABASE_ANON_KEY": "@supabase-anon-key",
-    "SUPABASE_SERVICE_ROLE_KEY": "@supabase-service-role-key",
-    "UPSTASH_REDIS_URL": "@upstash-redis-url",
-    "ANTHROPIC_API_KEY": "@anthropic-api-key",
-    "RESEND_API_KEY": "@resend-api-key",
-    "NEXT_PUBLIC_APP_URL": "@next-public-app-url"
-  },
-  "build": {
-    "env": {
-      "DATABASE_URL": "@database-url",
-      "DIRECT_URL": "@direct-url"
-    }
-  }
+  "public": true
 }
