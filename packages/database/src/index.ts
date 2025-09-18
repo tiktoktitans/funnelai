@@ -5,11 +5,14 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 const prismaClientSingleton = () => {
+  // Use postgresql:// instead of postgres:// for better compatibility
+  const databaseUrl = process.env.DATABASE_URL?.replace('postgres://', 'postgresql://');
+
   return new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
     datasources: {
       db: {
-        url: process.env.DATABASE_URL,
+        url: databaseUrl,
       },
     },
   });
