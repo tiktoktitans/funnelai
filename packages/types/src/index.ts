@@ -168,5 +168,6 @@ export interface DeploymentResult {
   url?: string;
   error?: string;
   buildId?: string;
+  commitSha?: string;
   logs?: string[];
 }

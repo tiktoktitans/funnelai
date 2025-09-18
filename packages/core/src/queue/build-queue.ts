@@ -35,20 +35,38 @@ export class BuildQueue {
       'builds',
       async (job: Job) => {
         const config = job.data as BuildConfig;
+        const logs: string[] = [];
+
+        const log = (message: string) => {
+          const timestamp = new Date().toISOString();
+          const logEntry = `[${timestamp}] ${message}`;
+          logs.push(logEntry);
+          console.log(logEntry);
+
+          // Update build with latest logs periodically
+          if (logs.length % 5 === 0) {
+            this.updateBuildLogs(config.buildId!, logs).catch(console.error);
+          }
+        };
 
         try {
-          await this.updateBuildStatus(config.buildId!, 'RUNNING');
+          log('Build started');
+          await this.updateBuildStatus(config.buildId!, 'RUNNING', undefined, logs);
 
+          log('Initializing services');
           const codegen = new CodegenService();
           const deploymentService = new DeploymentService();
 
+          log('Generating site from template');
           await job.updateProgress(20);
           const codegenResult = await codegen.generateSite(config);
 
           if (!codegenResult.success) {
             throw new Error(codegenResult.error);
           }
+          log('Site generation complete');
 
+          log('Starting deployment process');
           await job.updateProgress(60);
           const deployResult = await deploymentService.deploy(config);
 
@@ -56,12 +74,20 @@ export class BuildQueue {
             throw new Error(deployResult.error);
           }
 
+          // Merge deployment logs
+          if (deployResult.logs) {
+            logs.push(...deployResult.logs);
+          }
+          log(`Deployment successful: ${deployResult.url}`);
+
           await job.updateProgress(90);
           await this.updateBuildStatus(
             config.buildId!,
             'SUCCESS',
             deployResult.url,
-            deployResult.logs
+            logs,
+            undefined,
+            deployResult.commitSha
           );
 
           await prisma.project.update({
@@ -72,14 +98,16 @@ export class BuildQueue {
             },
           });
 
+          log('Build completed successfully');
           await job.updateProgress(100);
           return deployResult;
         } catch (error: any) {
+          log(`Build failed: ${error.message}`);
           await this.updateBuildStatus(
             config.buildId!,
             'FAILED',
             undefined,
-            undefined,
+            logs,
             error.message
           );
 
@@ -115,16 +143,27 @@ export class BuildQueue {
     status: 'QUEUED' | 'RUNNING' | 'SUCCESS' | 'FAILED',
     vercelDeployUrl?: string,
     logs?: string[],
-    error?: string
+    error?: string,
+    commitSha?: string
   ) {
     await prisma.build.update({
       where: { id: buildId },
       data: {
         status,
         vercelDeployUrl,
+        commitSha,
         logs: logs?.join('\n'),
         error,
         finishedAt: status === 'SUCCESS' || status === 'FAILED' ? new Date() : undefined,
+      },
+    });
+  }
+
+  private async updateBuildLogs(buildId: string, logs: string[]) {
+    await prisma.build.update({
+      where: { id: buildId },
+      data: {
+        logs: logs.join('\n'),
       },
     });
   }
