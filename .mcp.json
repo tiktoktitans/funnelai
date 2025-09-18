@@ -5,11 +5,10 @@
       "args": [
         "-y",
         "@supabase/mcp-server-supabase@latest",
-        "--project-ref=eqbinweqqfnobxepkuyp",
-        "--features=database"
+        "--project-ref=eqbinweqqfnobxepkuyp"
       ],
       "env": {
-        "SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxYmlud2VxcWZub2J4ZXBrdXlwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1ODA3NDg2MiwiZXhwIjoyMDczNjUwODYyfQ.CfQiaQUVziTms7aQKyZ47Hqi-tTNZyTVWckGBfbivnc"
+        "SUPABASE_ACCESS_TOKEN": "sbp_f9df2c683a480d41627876c82b41c76d2bedf822"
       }
     }
   }
