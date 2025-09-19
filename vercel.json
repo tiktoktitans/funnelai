@@ -3,13 +3,5 @@
   "installCommand": "pnpm install",
   "outputDirectory": "apps/studio/.next",
   "framework": "nextjs",
-  "public": true,
-  "functions": {
-    "apps/studio/app/api/projects/[id]/spec/landing/route.ts": {
-      "maxDuration": 60
-    },
-    "apps/studio/app/api/projects/[id]/generate/route.ts": {
-      "maxDuration": 60
-    }
-  }
+  "public": true
 }
