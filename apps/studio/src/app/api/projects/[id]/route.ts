@@ -1,40 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@funnelai/database';
+import { db, supabase } from '@funnelai/database/src/supabase-client';
 
 export async function GET(
   _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const project = await prisma.project.findUnique({
-      where: {
-        id: params.id,
-      },
-      include: {
-        specs: true,
-        integrations: true,
-        builds: {
-          orderBy: {
-            createdAt: 'desc',
-          },
-          take: 5,
-        },
-        forms: true,
-      },
-    });
+    // First try to get by ID
+    const { data, error } = await supabase
+      .from('Project')
+      .select(`
+        *,
+        specs:Spec(*),
+        integrations:Integration(*),
+        builds:Build(*),
+        forms:Form(*)
+      `)
+      .eq('id', params.id)
+      .single();
 
-    if (!project) {
-      return NextResponse.json(
-        { error: 'Project not found' },
-        { status: 404 }
-      );
+    if (!error && data) {
+      return NextResponse.json(data);
     }
 
-    return NextResponse.json(project);
+    // If not found by ID, try by slug
+    try {
+      const projectBySlug = await db.getProjectBySlug(params.id);
+      if (projectBySlug) {
+        return NextResponse.json(projectBySlug);
+      }
+    } catch (slugError) {
+      // Slug not found, continue
+    }
+
+    return NextResponse.json(
+      { error: 'Project not found' },
+      { status: 404 }
+    );
   } catch (error) {
     console.error('Project fetch error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch project' },
+      { error: 'Failed to fetch project', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
@@ -47,18 +53,22 @@ export async function PATCH(
   try {
     const body = await request.json();
 
-    const project = await prisma.project.update({
-      where: {
-        id: params.id,
-      },
-      data: body,
-    });
+    const { data, error } = await supabase
+      .from('Project')
+      .update(body)
+      .eq('id', params.id)
+      .select()
+      .single();
 
-    return NextResponse.json(project);
+    if (error) {
+      throw error;
+    }
+
+    return NextResponse.json(data);
   } catch (error) {
     console.error('Project update error:', error);
     return NextResponse.json(
-      { error: 'Failed to update project' },
+      { error: 'Failed to update project', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
@@ -69,17 +79,20 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    await prisma.project.delete({
-      where: {
-        id: params.id,
-      },
-    });
+    const { error } = await supabase
+      .from('Project')
+      .delete()
+      .eq('id', params.id);
+
+    if (error) {
+      throw error;
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Project delete error:', error);
     return NextResponse.json(
-      { error: 'Failed to delete project' },
+      { error: 'Failed to delete project', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
