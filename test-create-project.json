@@ -1,0 +1,12 @@
+{
+  "brandName": "TestBrand",
+  "brandColors": {
+    "primary": "#000000",
+    "secondary": "#ffffff"
+  },
+  "offerName": "AI Funnel Builder Pro",
+  "offerPrice": "$997",
+  "offerPromise": "Build high-converting funnels in 10 minutes with AI",
+  "audience": "Digital marketers and entrepreneurs who need fast, professional funnels",
+  "calendlyUrl": "https://calendly.com/demo/meeting"
+}
