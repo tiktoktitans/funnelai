@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, Copy, Check, Download, Eye, Code } from 'lucide-react';
+import { ArrowLeft, Copy, Check, Download, Eye, Code, Monitor } from 'lucide-react';
 import Link from 'next/link';
 
 export default function PreviewPage() {
@@ -11,6 +11,7 @@ export default function PreviewPage() {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'landing' | 'thankyou'>('landing');
+  const [viewMode, setViewMode] = useState<'visual' | 'code'>('visual');
 
   useEffect(() => {
     fetchProject();
@@ -114,20 +115,51 @@ export default function PreviewPage() {
           </div>
 
           <div className="flex gap-2">
-            <button
-              onClick={() => copyToClipboard(activeCode)}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
-            >
-              {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
-              {copied ? 'Copied!' : 'Copy Code'}
-            </button>
-            <button
-              onClick={() => downloadCode(activeCode, activeFileName)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
-            >
-              <Download className="h-4 w-4" />
-              Download
-            </button>
+            {/* View Mode Toggle */}
+            <div className="flex bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('visual')}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded ${
+                  viewMode === 'visual'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                } transition`}
+              >
+                <Monitor className="h-4 w-4" />
+                Visual
+              </button>
+              <button
+                onClick={() => setViewMode('code')}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded ${
+                  viewMode === 'code'
+                    ? 'bg-white text-gray-900 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                } transition`}
+              >
+                <Code className="h-4 w-4" />
+                Code
+              </button>
+            </div>
+
+            {/* Only show copy/download in code view */}
+            {viewMode === 'code' && (
+              <>
+                <button
+                  onClick={() => copyToClipboard(activeCode)}
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
+                >
+                  {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                  {copied ? 'Copied!' : 'Copy Code'}
+                </button>
+                <button
+                  onClick={() => downloadCode(activeCode, activeFileName)}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+                >
+                  <Download className="h-4 w-4" />
+                  Download
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -163,7 +195,7 @@ export default function PreviewPage() {
                 </div>
               </div>
 
-              {/* Code Display */}
+              {/* Content Display */}
               <div className="p-4">
                 {!activeCode ? (
                   <div className="text-center py-12">
@@ -177,14 +209,26 @@ export default function PreviewPage() {
                     </Link>
                   </div>
                 ) : (
-                  <div className="relative">
-                    <div className="absolute top-2 right-2 px-3 py-1 bg-gray-800 text-green-400 text-xs rounded">
-                      {activeFileName}
-                    </div>
-                    <pre className="bg-gray-900 rounded-lg p-4 overflow-x-auto max-h-[600px] overflow-y-auto">
-                      <code className="text-sm text-gray-300 font-mono">{activeCode}</code>
-                    </pre>
-                  </div>
+                  <>
+                    {viewMode === 'visual' ? (
+                      <div className="relative bg-gray-50 rounded-lg overflow-hidden">
+                        <iframe
+                          src={`/api/projects/${params.id}/preview/${activeTab}`}
+                          className="w-full h-[700px] border-0"
+                          title={`Preview of ${activeTab} page`}
+                        />
+                      </div>
+                    ) : (
+                      <div className="relative">
+                        <div className="absolute top-2 right-2 px-3 py-1 bg-gray-800 text-green-400 text-xs rounded">
+                          {activeFileName}
+                        </div>
+                        <pre className="bg-gray-900 rounded-lg p-4 overflow-x-auto max-h-[600px] overflow-y-auto">
+                          <code className="text-sm text-gray-300 font-mono">{activeCode}</code>
+                        </pre>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -258,15 +302,29 @@ export default function PreviewPage() {
 
             {/* Instructions */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="font-semibold text-blue-900 mb-2">How to Use</h3>
-              <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
-                <li>Copy or download the code</li>
-                <li>Create a new Next.js 14 project</li>
-                <li>Install dependencies (React, Tailwind)</li>
-                <li>Add the code to your pages</li>
-                <li>Customize content and styling</li>
-                <li>Deploy to Vercel or other hosting</li>
-              </ol>
+              <h3 className="font-semibold text-blue-900 mb-2">
+                {viewMode === 'visual' ? 'Preview Mode' : 'How to Use'}
+              </h3>
+              {viewMode === 'visual' ? (
+                <div className="text-sm text-blue-800 space-y-2">
+                  <p>✨ Live preview of your generated landing page</p>
+                  <p>🎨 Styled with your brand colors</p>
+                  <p>📱 Responsive design included</p>
+                  <p>🖱️ Click buttons to see interactions</p>
+                  <p className="text-xs mt-2 opacity-75">
+                    Note: Forms and links are simulated for preview
+                  </p>
+                </div>
+              ) : (
+                <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+                  <li>Copy or download the code</li>
+                  <li>Create a new Next.js 14 project</li>
+                  <li>Install dependencies (React, Tailwind)</li>
+                  <li>Add the code to your pages</li>
+                  <li>Customize content and styling</li>
+                  <li>Deploy to Vercel or other hosting</li>
+                </ol>
+              )}
             </div>
           </div>
         </div>
