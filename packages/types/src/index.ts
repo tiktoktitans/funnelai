@@ -10,8 +10,8 @@ export const WizardInputSchema = z.object({
   offerPrice: z.string().min(1).max(50),
   offerPromise: z.string().min(1).max(500),
   audience: z.string().min(1).max(500),
-  calendlyUrl: z.string().url().optional(),
-  ctaLink: z.string().url().optional(),
+  calendlyUrl: z.union([z.string().url(), z.literal(''), z.undefined()]).optional().transform(val => val === '' ? undefined : val),
+  ctaLink: z.union([z.string().url(), z.literal(''), z.undefined()]).optional().transform(val => val === '' ? undefined : val),
 });
 
 export type WizardInput = z.infer<typeof WizardInputSchema>;

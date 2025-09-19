@@ -1,0 +1,12 @@
+{
+  "brandName": "TechStartup",
+  "brandColors": {
+    "primary": "#007AFF",
+    "secondary": "#0051D5"
+  },
+  "offerName": "AI Marketing Suite",
+  "offerPrice": "$997",
+  "offerPromise": "10x your leads in 30 days with our AI-powered marketing automation",
+  "audience": "SaaS founders and digital marketers looking to scale their lead generation",
+  "calendlyUrl": ""
+}
