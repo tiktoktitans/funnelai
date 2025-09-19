@@ -1,9 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || '',
-});
-
 export interface GenerationInput {
   brandName: string;
   brandColors: {
@@ -74,6 +70,16 @@ Generate ONLY the component code:`;
 export class AIGenerator {
   async generateLandingPage(input: GenerationInput): Promise<GeneratedContent> {
     try {
+      // Initialize Anthropic client with API key
+      const apiKey = process.env.ANTHROPIC_API_KEY || '';
+      console.log('API Key present:', !!apiKey);
+      console.log('API Key length:', apiKey.length);
+      console.log('API Key first 10 chars:', apiKey.substring(0, 10));
+
+      const anthropic = new Anthropic({
+        apiKey: apiKey,
+      });
+
       // Generate landing page
       const landingPrompt = LANDING_PAGE_PROMPT
         .replace('{brandName}', input.brandName)
