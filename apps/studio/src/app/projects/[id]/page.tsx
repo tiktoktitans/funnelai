@@ -96,9 +96,11 @@ export default function ProjectDetailPage() {
           </p>
         </div>
         <div className="flex gap-4">
-          <Button variant="outline">
-            <Eye className="mr-2 h-4 w-4" />
-            Preview
+          <Button variant="outline" asChild>
+            <a href={`/projects/${params.id}/preview`}>
+              <Eye className="mr-2 h-4 w-4" />
+              Preview Generated Content
+            </a>
           </Button>
           <Button>
             <Rocket className="mr-2 h-4 w-4" />
