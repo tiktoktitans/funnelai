@@ -15,8 +15,10 @@
     "db:seed": "pnpm --filter @funnelai/database seed"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^2.0.17",
     "@anthropic-ai/sdk": "^0.16.1",
     "@supabase/supabase-js": "^2.57.4",
+    "ai": "^5.0.47",
     "dotenv": "^17.2.2",
     "next": "14.0.4",
     "pg": "^8.16.3",
