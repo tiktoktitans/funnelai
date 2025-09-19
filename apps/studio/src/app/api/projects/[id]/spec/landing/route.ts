@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db, supabase } from '@funnelai/database/src/supabase-client';
 import { AIGenerator } from '@funnelai/core/src/services/ai-generator';
 
+// Force Node.js runtime for Anthropic API compatibility
+export const runtime = 'nodejs';
+export const maxDuration = 60; // 60 seconds timeout for AI generation
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }

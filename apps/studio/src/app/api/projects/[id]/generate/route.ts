@@ -3,6 +3,10 @@ import { db } from '@funnelai/database/src/supabase-client';
 import { AIGenerator } from '@funnelai/core/src/services/ai-generator';
 import { DeploymentService } from '@funnelai/core/src/services/deployment';
 
+// Force Node.js runtime for Anthropic API compatibility
+export const runtime = 'nodejs';
+export const maxDuration = 60;
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }

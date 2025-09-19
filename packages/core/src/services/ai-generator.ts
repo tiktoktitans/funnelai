@@ -71,10 +71,10 @@ export class AIGenerator {
   async generateLandingPage(input: GenerationInput): Promise<GeneratedContent> {
     try {
       // Initialize Anthropic client with API key
-      const apiKey = process.env.ANTHROPIC_API_KEY || '';
-      console.log('API Key present:', !!apiKey);
-      console.log('API Key length:', apiKey.length);
-      console.log('API Key first 10 chars:', apiKey.substring(0, 10));
+      const apiKey = process.env.ANTHROPIC_API_KEY;
+      if (!apiKey) {
+        throw new Error('Anthropic API key is not configured');
+      }
 
       const anthropic = new Anthropic({
         apiKey: apiKey,
@@ -99,8 +99,9 @@ export class AIGenerator {
         }]
       });
 
-      const landingPage = landingResponse.content[0].type === 'text'
-        ? landingResponse.content[0].text
+      const landingContent = landingResponse.content[0];
+      const landingPage = landingContent && landingContent.type === 'text'
+        ? landingContent.text
         : '';
 
       // Generate thank you page
@@ -117,8 +118,9 @@ export class AIGenerator {
         }]
       });
 
-      const thankYouPage = thankYouResponse.content[0].type === 'text'
-        ? thankYouResponse.content[0].text
+      const thankYouContent = thankYouResponse.content[0];
+      const thankYouPage = thankYouContent && thankYouContent.type === 'text'
+        ? thankYouContent.text
         : '';
 
       return {
@@ -137,8 +139,6 @@ export class AIGenerator {
       };
     } catch (error) {
       console.error('AI generation failed:', error);
-      console.error('API Key present:', !!process.env.ANTHROPIC_API_KEY);
-      console.error('Error details:', error instanceof Error ? error.message : error);
       throw new Error(`Failed to generate content: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
