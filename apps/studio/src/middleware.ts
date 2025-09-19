@@ -13,12 +13,17 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   if (pathname.startsWith('/api') && request.method === 'POST') {
+    const contentLength = request.headers.get('content-length');
     const contentType = request.headers.get('content-type');
-    if (!contentType?.includes('application/json')) {
-      return NextResponse.json(
-        { error: 'Content-Type must be application/json' },
-        { status: 400 }
-      );
+
+    // Only require Content-Type if there's actually a body
+    if (contentLength && parseInt(contentLength) > 0) {
+      if (!contentType?.includes('application/json')) {
+        return NextResponse.json(
+          { error: 'Content-Type must be application/json' },
+          { status: 400 }
+        );
+      }
     }
   }
 

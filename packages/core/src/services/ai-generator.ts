@@ -131,7 +131,9 @@ export class AIGenerator {
       };
     } catch (error) {
       console.error('AI generation failed:', error);
-      throw new Error('Failed to generate content');
+      console.error('API Key present:', !!process.env.ANTHROPIC_API_KEY);
+      console.error('Error details:', error instanceof Error ? error.message : error);
+      throw new Error(`Failed to generate content: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
