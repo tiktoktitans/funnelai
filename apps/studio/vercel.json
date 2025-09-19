@@ -1,4 +1,7 @@
 {
+  "installCommand": "cd ../.. && pnpm install",
+  "buildCommand": "cd ../.. && pnpm build --filter=@funnelai/studio",
+  "outputDirectory": ".next",
   "functions": {
     "app/api/projects/[id]/spec/landing/route.ts": {
       "maxDuration": 60
