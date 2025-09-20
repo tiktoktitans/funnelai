@@ -327,16 +327,43 @@ export async function GET(
   { params }: { params: { id: string; type: string } }
 ) {
   try {
-    const { data: project, error } = await supabase
-      .from('Project')
-      .select(`
-        *,
-        specs:Spec(*)
-      `)
-      .eq('id', params.id)
-      .single();
+    // Try to find project by ID first, then by slug
+    let project = null;
+    let error = null;
+
+    // Check if params.id is a UUID
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.id);
+
+    if (isUUID) {
+      // Try by ID
+      const result = await supabase
+        .from('Project')
+        .select(`
+          *,
+          specs:Spec(*)
+        `)
+        .eq('id', params.id)
+        .single();
+
+      project = result.data;
+      error = result.error;
+    } else {
+      // Try by slug
+      const result = await supabase
+        .from('Project')
+        .select(`
+          *,
+          specs:Spec(*)
+        `)
+        .eq('slug', params.id)
+        .single();
+
+      project = result.data;
+      error = result.error;
+    }
 
     if (error || !project) {
+      console.error('Project not found for:', params.id);
       return new NextResponse('Project not found', { status: 404 });
     }
 

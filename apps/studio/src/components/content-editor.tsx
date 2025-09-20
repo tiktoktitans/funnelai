@@ -68,18 +68,19 @@ export function ContentEditor({ project, onSave, isSaving }: ContentEditorProps)
 
       toast({
         title: 'Content Generated!',
-        description: 'AI has created your content. Review and edit as needed.',
+        description: 'Redirecting to preview...',
       });
 
-      // Reload the page data to ensure consistency
-      window.location.reload();
+      // Auto-navigate to preview page after successful generation
+      setTimeout(() => {
+        window.location.href = `/projects/${project.id}/preview`;
+      }, 1500);
     } catch (error) {
       toast({
         title: 'Error',
         description: 'Failed to generate content',
         variant: 'destructive',
       });
-    } finally {
       setIsGenerating(false);
     }
   };
@@ -101,15 +102,58 @@ export function ContentEditor({ project, onSave, isSaving }: ContentEditorProps)
     await onSave('landing', content);
   };
 
-  if (!content?.copy && !isGenerating) {
+  // Check if we need to poll for content
+  useEffect(() => {
+    let pollInterval: any = null;
+
+    // Only poll if we don't have content and we're not already generating
+    if (!content?.copy && !isGenerating && project?.specs?.length > 0) {
+      // Check if there's a spec being generated
+      const landingSpec = project.specs.find((s: any) => s.type === 'LANDING');
+      if (landingSpec && !landingSpec.content?.copy && !landingSpec.content?.landingSpec) {
+        // Start polling every 5 seconds to check for content
+        pollInterval = setInterval(async () => {
+          try {
+            const response = await fetch(`/api/projects/${project.id}`);
+            const data = await response.json();
+            const updatedSpec = data.specs?.find((s: any) => s.type === 'LANDING');
+
+            if (updatedSpec?.content?.landingSpec || updatedSpec?.content?.copy) {
+              // Content is ready, update state and stop polling
+              setContent(updatedSpec.content);
+              clearInterval(pollInterval);
+
+              toast({
+                title: 'Content Ready!',
+                description: 'Your content has been generated.',
+              });
+
+              // Navigate to preview
+              setTimeout(() => {
+                window.location.href = `/projects/${project.id}/preview`;
+              }, 1500);
+            }
+          } catch (error) {
+            console.error('Error polling for content:', error);
+          }
+        }, 5000);
+      }
+    }
+
+    return () => {
+      if (pollInterval) clearInterval(pollInterval);
+    };
+  }, [content, isGenerating, project]);
+
+  if (!content?.copy && !content?.landingSpec && !isGenerating) {
     return (
       <div className="text-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
         <p className="text-muted-foreground">
-          Content is being generated... This takes about 40 seconds.
+          Content is being generated... This takes about 30-40 seconds.
         </p>
         <p className="text-sm text-muted-foreground mt-2">
-          This page will refresh automatically when ready.
+          You'll be redirected to preview automatically when ready.
         </p>
       </div>
     );
