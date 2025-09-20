@@ -36,12 +36,32 @@ export function ContentEditor({ project, onSave, isSaving }: ContentEditorProps)
       if (!response.ok) throw new Error('Failed to generate content');
 
       const data = await response.json();
-      setContent(data.content);
+
+      // Ensure we have valid content structure
+      if (data?.spec?.content) {
+        setContent(data.spec.content);
+      } else if (data?.content) {
+        setContent(data.content);
+      } else {
+        // Fallback to empty structure
+        setContent({
+          copy: {
+            hero: { headline: '', subheadline: '', eyebrow: '', cta: { label: 'Get Started' } },
+            problem: { headline: '', bullets: [] },
+            solution: { headline: '', bullets: [] },
+            proof: { headline: '', testimonials: [] },
+            cta: { headline: '', sub: '' }
+          }
+        });
+      }
 
       toast({
         title: 'Content Generated!',
         description: 'AI has created your content. Review and edit as needed.',
       });
+
+      // Reload the page data to ensure consistency
+      window.location.reload();
     } catch (error) {
       toast({
         title: 'Error',
@@ -57,9 +77,9 @@ export function ContentEditor({ project, onSave, isSaving }: ContentEditorProps)
     setContent((prev: any) => ({
       ...prev,
       copy: {
-        ...prev.copy,
+        ...(prev?.copy || {}),
         [section]: {
-          ...prev.copy?.[section],
+          ...(prev?.copy?.[section] || {}),
           [field]: value,
         },
       },
@@ -70,7 +90,7 @@ export function ContentEditor({ project, onSave, isSaving }: ContentEditorProps)
     await onSave('landing', content);
   };
 
-  if (!content.copy && !isGenerating) {
+  if (!content?.copy && !isGenerating) {
     return (
       <div className="text-center py-12">
         <p className="text-muted-foreground mb-4">
@@ -117,7 +137,7 @@ export function ContentEditor({ project, onSave, isSaving }: ContentEditorProps)
       </div>
 
       <div className="space-y-4">
-        {activeSection === 'hero' && content.copy?.hero && (
+        {activeSection === 'hero' && content?.copy?.hero && (
           <>
             <div>
               <Label htmlFor="eyebrow">Eyebrow Text</Label>
@@ -125,7 +145,7 @@ export function ContentEditor({ project, onSave, isSaving }: ContentEditorProps)
                 id="eyebrow"
                 type="text"
                 className="w-full px-3 py-2 border rounded-md"
-                value={content.copy.hero.eyebrow || ''}
+                value={content?.copy?.hero?.eyebrow || ''}
                 onChange={(e) => updateContent('hero', 'eyebrow', e.target.value)}
               />
             </div>
@@ -133,7 +153,7 @@ export function ContentEditor({ project, onSave, isSaving }: ContentEditorProps)
               <Label htmlFor="headline">Headline</Label>
               <Textarea
                 id="headline"
-                value={content.copy.hero.headline || ''}
+                value={content?.copy?.hero?.headline || ''}
                 onChange={(e) => updateContent('hero', 'headline', e.target.value)}
                 rows={2}
               />
@@ -142,7 +162,7 @@ export function ContentEditor({ project, onSave, isSaving }: ContentEditorProps)
               <Label htmlFor="subheadline">Subheadline</Label>
               <Textarea
                 id="subheadline"
-                value={content.copy.hero.subheadline || ''}
+                value={content?.copy?.hero?.subheadline || ''}
                 onChange={(e) => updateContent('hero', 'subheadline', e.target.value)}
                 rows={2}
               />
@@ -153,9 +173,9 @@ export function ContentEditor({ project, onSave, isSaving }: ContentEditorProps)
                 id="cta-label"
                 type="text"
                 className="w-full px-3 py-2 border rounded-md"
-                value={content.copy.hero.cta?.label || ''}
+                value={content?.copy?.hero?.cta?.label || ''}
                 onChange={(e) => updateContent('hero', 'cta', {
-                  ...content.copy.hero.cta,
+                  ...(content?.copy?.hero?.cta || {}),
                   label: e.target.value,
                 })}
               />
@@ -163,25 +183,25 @@ export function ContentEditor({ project, onSave, isSaving }: ContentEditorProps)
           </>
         )}
 
-        {activeSection === 'problem' && content.copy?.problem && (
+        {activeSection === 'problem' && content?.copy?.problem && (
           <>
             <div>
               <Label htmlFor="problem-headline">Problem Headline</Label>
               <Textarea
                 id="problem-headline"
-                value={content.copy.problem.headline || ''}
+                value={content?.copy?.problem?.headline || ''}
                 onChange={(e) => updateContent('problem', 'headline', e.target.value)}
                 rows={2}
               />
             </div>
             <div>
               <Label>Pain Points</Label>
-              {content.copy.problem.bullets?.map((bullet: string, index: number) => (
+              {content?.copy?.problem?.bullets?.map((bullet: string, index: number) => (
                 <Textarea
                   key={index}
                   value={bullet}
                   onChange={(e) => {
-                    const newBullets = [...content.copy.problem.bullets];
+                    const newBullets = [...(content?.copy?.problem?.bullets || [])];
                     newBullets[index] = e.target.value;
                     updateContent('problem', 'bullets', newBullets);
                   }}
@@ -193,25 +213,25 @@ export function ContentEditor({ project, onSave, isSaving }: ContentEditorProps)
           </>
         )}
 
-        {activeSection === 'solution' && content.copy?.solution && (
+        {activeSection === 'solution' && content?.copy?.solution && (
           <>
             <div>
               <Label htmlFor="solution-headline">Solution Headline</Label>
               <Textarea
                 id="solution-headline"
-                value={content.copy.solution.headline || ''}
+                value={content?.copy?.solution?.headline || ''}
                 onChange={(e) => updateContent('solution', 'headline', e.target.value)}
                 rows={2}
               />
             </div>
             <div>
               <Label>Benefits</Label>
-              {content.copy.solution.bullets?.map((bullet: string, index: number) => (
+              {content?.copy?.solution?.bullets?.map((bullet: string, index: number) => (
                 <Textarea
                   key={index}
                   value={bullet}
                   onChange={(e) => {
-                    const newBullets = [...content.copy.solution.bullets];
+                    const newBullets = [...(content?.copy?.solution?.bullets || [])];
                     newBullets[index] = e.target.value;
                     updateContent('solution', 'bullets', newBullets);
                   }}
@@ -223,13 +243,13 @@ export function ContentEditor({ project, onSave, isSaving }: ContentEditorProps)
           </>
         )}
 
-        {activeSection === 'cta' && content.copy?.cta && (
+        {activeSection === 'cta' && content?.copy?.cta && (
           <>
             <div>
               <Label htmlFor="cta-headline">CTA Headline</Label>
               <Textarea
                 id="cta-headline"
-                value={content.copy.cta.headline || ''}
+                value={content?.copy?.cta?.headline || ''}
                 onChange={(e) => updateContent('cta', 'headline', e.target.value)}
                 rows={2}
               />
@@ -238,7 +258,7 @@ export function ContentEditor({ project, onSave, isSaving }: ContentEditorProps)
               <Label htmlFor="cta-sub">CTA Subtext</Label>
               <Textarea
                 id="cta-sub"
-                value={content.copy.cta.sub || ''}
+                value={content?.copy?.cta?.sub || ''}
                 onChange={(e) => updateContent('cta', 'sub', e.target.value)}
                 rows={2}
               />

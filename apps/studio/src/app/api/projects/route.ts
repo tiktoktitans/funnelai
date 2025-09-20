@@ -7,6 +7,14 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
+    // Clean up empty strings before validation
+    if (body.calendlyUrl === '') {
+      delete body.calendlyUrl;
+    }
+    if (body.ctaLink === '') {
+      delete body.ctaLink;
+    }
+
     const validatedInput = WizardInputSchema.parse(body);
 
     const slug = slugify(validatedInput.brandName) + '-' + Date.now();
@@ -42,8 +50,17 @@ export async function POST(request: NextRequest) {
       id: project.id,
       slug: project.slug
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Project creation error:', error);
+
+    // Handle Zod validation errors
+    if (error?.issues) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: error.issues },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
       { error: 'Failed to create project', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
