@@ -26,6 +26,17 @@ export function ContentEditor({ project, onSave, isSaving }: ContentEditorProps)
     }
   }, [project]);
 
+  // Poll for content if it's not available yet
+  useEffect(() => {
+    if (!content?.copy && !isGenerating) {
+      const interval = setInterval(() => {
+        window.location.reload();
+      }, 5000); // Refresh every 5 seconds
+
+      return () => clearInterval(interval);
+    }
+  }, [content, isGenerating]);
+
   const generateContent = async (type: string) => {
     setIsGenerating(true);
     try {
@@ -93,13 +104,13 @@ export function ContentEditor({ project, onSave, isSaving }: ContentEditorProps)
   if (!content?.copy && !isGenerating) {
     return (
       <div className="text-center py-12">
-        <p className="text-muted-foreground mb-4">
-          No content generated yet
+        <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+        <p className="text-muted-foreground">
+          Content is being generated... This takes about 40 seconds.
         </p>
-        <Button onClick={() => generateContent('landing')} disabled={isGenerating}>
-          <Sparkles className="mr-2 h-4 w-4" />
-          Generate with AI
-        </Button>
+        <p className="text-sm text-muted-foreground mt-2">
+          This page will refresh automatically when ready.
+        </p>
       </div>
     );
   }

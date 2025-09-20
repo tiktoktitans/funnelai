@@ -44,6 +44,7 @@ export default function NewProjectPage() {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationStatus, setGenerationStatus] = useState('');
 
   const [formData, setFormData] = useState<Partial<WizardInput>>({
     brandName: '',
@@ -71,6 +72,7 @@ export default function NewProjectPage() {
     setIsGenerating(true);
 
     try {
+      // Step 1: Create project
       const response = await fetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -83,9 +85,30 @@ export default function NewProjectPage() {
 
       toast({
         title: 'Project created!',
-        description: 'AI is generating your funnel content...',
+        description: 'AI is now generating your funnel content... This takes about 40 seconds.',
       });
 
+      setGenerationStatus('AI is writing your landing page copy...');
+
+      // Step 2: Automatically trigger AI generation
+      const generateResponse = await fetch(`/api/projects/${id}/spec/landing`, {
+        method: 'POST',
+      });
+
+      if (!generateResponse.ok) {
+        console.error('Generation failed, but project was created');
+        toast({
+          title: 'Generation Started',
+          description: 'Redirecting to your project...',
+        });
+      } else {
+        toast({
+          title: 'Success!',
+          description: 'Your AI-generated funnel is ready!',
+        });
+      }
+
+      // Redirect to project page
       router.push(`/projects/${id}`);
     } catch (error) {
       toast({
@@ -263,15 +286,16 @@ export default function NewProjectPage() {
                 <div className="flex items-start gap-3">
                   <Sparkles className="h-5 w-5 text-primary mt-0.5" />
                   <div>
-                    <h4 className="font-medium">AI will generate:</h4>
+                    <h4 className="font-medium">What happens when you click Generate:</h4>
                     <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-                      <li>• Landing page with compelling copy</li>
-                      <li>• Thank you page</li>
-                      <li>• Webinar registration page</li>
-                      <li>• Email sequences (7 emails)</li>
-                      <li>• VSL script</li>
-                      <li>• Application form</li>
+                      <li>• AI will write your landing page (40 seconds)</li>
+                      <li>• AI will create your thank you page</li>
+                      <li>• Everything saves automatically</li>
+                      <li>• You'll be redirected to preview</li>
                     </ul>
+                    <p className="mt-3 text-xs text-orange-600 font-medium">
+                      This is the ONLY generation step - no need to click anything else!
+                    </p>
                   </div>
                 </div>
               </div>
@@ -303,7 +327,7 @@ export default function NewProjectPage() {
               {isGenerating ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating...
+                  {generationStatus || 'Generating...'}
                 </>
               ) : (
                 <>
