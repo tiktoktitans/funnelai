@@ -211,12 +211,26 @@ export default function PreviewPage() {
                 ) : (
                   <>
                     {viewMode === 'visual' ? (
-                      <div className="relative bg-gray-50 rounded-lg overflow-hidden">
-                        <iframe
-                          src={`/api/projects/${params.id}/preview/${activeTab}`}
-                          className="w-full h-[700px] border-0"
-                          title={`Preview of ${activeTab} page`}
-                        />
+                      <div className="relative bg-gray-50 rounded-lg overflow-hidden min-h-[500px]">
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="text-center p-8">
+                            <Eye className="h-16 w-16 text-blue-500 mx-auto mb-4" />
+                            <h3 className="text-xl font-semibold mb-3">Visual Preview Ready</h3>
+                            <p className="text-gray-600 mb-6">
+                              Click below to open your {activeTab === 'landing' ? 'landing page' : 'thank you page'} preview in a new tab
+                            </p>
+                            <button
+                              onClick={() => window.open(`/api/projects/${params.id}/preview/${activeTab}`, '_blank')}
+                              className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition flex items-center gap-2 mx-auto"
+                            >
+                              <Eye className="h-5 w-5" />
+                              Open Visual Preview
+                            </button>
+                            <p className="text-sm text-gray-500 mt-4">
+                              Preview opens in a new tab for the best viewing experience
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     ) : (
                       <div className="relative">

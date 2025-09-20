@@ -178,6 +178,8 @@ export async function GET(
     return new NextResponse(html, {
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
+        'X-Frame-Options': 'SAMEORIGIN',
+        'Content-Security-Policy': "frame-ancestors 'self' https://funnelai-studio.vercel.app https://*.vercel.app localhost:* http://localhost:*",
       },
     });
   } catch (error) {
