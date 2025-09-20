@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@funnelai/database/src/supabase-client';
-import { AIGenerator } from '@funnelai/core/src/services/ai-generator-vercel';
+import { AdvancedAIGenerator } from '@funnelai/core/src/services/ai-generator-advanced';
 import { DeploymentService } from '@funnelai/core/src/services/deployment';
 
 // Force Node.js runtime for AI compatibility
@@ -43,14 +43,14 @@ export async function POST(
     });
 
     try {
-      // Generate content with AI
-      console.log('Starting AI generation...');
-      const generator = new AIGenerator();
-      const content = await generator.generateLandingPage(landingSpec.input);
+      // Generate content with advanced AI
+      console.log('Starting advanced AI generation...');
+      const generator = new AdvancedAIGenerator();
+      const specs = await generator.generateWebinarContent(landingSpec.input);
 
-      // Generate project files
-      console.log('Generating project files...');
-      const files = generator.generateProjectFiles(content, landingSpec.input);
+      // Generate complete project files with templates
+      console.log('Generating multi-file project structure...');
+      const files = generator.generateProjectFiles(specs, landingSpec.input);
 
       // Deploy to GitHub and Vercel
       console.log('Starting deployment...');

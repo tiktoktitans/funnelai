@@ -69,8 +69,15 @@ export default function PreviewPage() {
   }
 
   const landingSpec = project.specs?.find((s: any) => s.type === 'LANDING');
-  const landingPageCode = landingSpec?.content?.landingPage || '';
-  const thankYouPageCode = landingSpec?.content?.thankYouPage || '';
+
+  // Handle both old and new content structures
+  const landingPageCode = landingSpec?.content?.landingPage ||
+    (landingSpec?.content?.projectFiles ?
+      landingSpec.content.projectFiles.find((f: any) => f[0] === 'app/page.tsx')?.[1] : '') || '';
+
+  const thankYouPageCode = landingSpec?.content?.thankYouPage ||
+    (landingSpec?.content?.projectFiles ?
+      landingSpec.content.projectFiles.find((f: any) => f[0] === 'app/thank-you/page.tsx')?.[1] : '') || '';
 
   // Clean the code by removing markdown code blocks
   const cleanCode = (code: string) => {

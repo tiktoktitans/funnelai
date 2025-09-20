@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, supabase } from '@funnelai/database/src/supabase-client';
-import { AIGenerator } from '@funnelai/core/src/services/ai-generator-vercel';
+import { AdvancedAIGenerator } from '@funnelai/core/src/services/ai-generator-advanced';
 
 // Force Node.js runtime for AI compatibility
 export const runtime = 'nodejs';
@@ -38,19 +38,31 @@ export async function POST(
       );
     }
 
-    // Generate content with AI
-    console.log('Generating landing page content...');
-    const generator = new AIGenerator();
-    const content = await generator.generateLandingPage(landingSpec.input);
+    // Generate content with advanced AI
+    console.log('Generating high-converting webinar funnel...');
+    const generator = new AdvancedAIGenerator();
+    const specs = await generator.generateWebinarContent(landingSpec.input);
+
+    // Create structured content object
+    const content = {
+      landingSpec: specs.landingSpec,
+      thankYouSpec: specs.thankYouSpec,
+      metadata: specs.metadata,
+      // Also generate the project files for download
+      projectFiles: generator.generateProjectFiles(specs, landingSpec.input)
+    };
 
     // Update spec with generated content
     const { data: updatedSpec, error: updateError } = await supabase
       .from('Spec')
       .update({
         content: {
-          landingPage: content.landingPage,
-          thankYouPage: content.thankYouPage,
-          metadata: content.metadata
+          // Store the JSON specs
+          landingSpec: content.landingSpec,
+          thankYouSpec: content.thankYouSpec,
+          metadata: content.metadata,
+          // Store file map as JSON for later use
+          projectFiles: Array.from(content.projectFiles.entries())
         },
         updatedAt: new Date().toISOString()
       })
