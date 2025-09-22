@@ -8,6 +8,8 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+// ==================== AUTHENTICATION ====================
+
 model User {
   id            String    @id @default(uuid())
   email         String    @unique
@@ -16,8 +18,481 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  // Relations
   projects      Project[]
+  workspaces    UserWorkspace[]
+  ownedLeads    Lead[]         @relation("LeadOwner")
+  ownedContacts Contact[]      @relation("ContactOwner")
+  ownedDeals    Deal[]         @relation("DealOwner")
+  activities    Activity[]
+  savedViews    SavedView[]
+  assignments   Conversation[] @relation("ConversationAssignee")
 }
+
+// ==================== MULTI-TENANCY ====================
+
+model Workspace {
+  id           String   @id @default(cuid())
+  name         String
+  slug         String   @unique
+  timezone     String   @default("America/New_York")
+  brandName    String?
+  logoUrl      String?
+  emailFrom    String?
+  smsFrom      String?
+  quietHoursStart Int?  @default(21) // 9pm
+  quietHoursEnd   Int?  @default(8)  // 8am
+  flags        Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  users         UserWorkspace[]
+  providers     ProviderConfig[]
+  organizations Organization[]
+  leads         Lead[]
+  contacts      Contact[]
+  activities    Activity[]
+  savedViews    SavedView[]
+  conversations Conversation[]
+  messages      Message[]
+  pipelines     Pipeline[]
+  stages        Stage[]
+  deals         Deal[]
+  sequences     Sequence[]
+  scheduledJobs ScheduledJob[]
+  templates     Template[]
+  webhooks      WebhookEndpoint[]
+  enrollments   SequenceEnrollment[]
+  assignmentRules AssignmentRule[]
+  slas          SLA[]
+}
+
+model UserWorkspace {
+  id          String   @id @default(cuid())
+  userId      String
+  workspaceId String
+  role        String   @default("member") // owner|admin|member
+  createdAt   DateTime @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+  @@index([userId])
+  @@index([workspaceId])
+}
+
+// ==================== CRM CORE ====================
+
+model Organization {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+  website     String?
+  industry    String?
+  size        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contacts  Contact[]
+
+  @@index([workspaceId])
+}
+
+model Lead {
+  id          String   @id @default(cuid())
+  workspaceId String
+  email       String?
+  phoneE164   String?
+  firstName   String?
+  lastName    String?
+  company     String?
+  source      String?  // utm_source / webinar / tiktok
+  medium      String?  // utm_medium
+  campaign    String?  // utm_campaign
+  status      String   @default("new") // new|working|qualified|disqualified|converted
+  tags        String[] @default([])
+  ownerId     String?
+  score       Int      @default(0)
+  utmData     Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace  Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  owner      User?        @relation("LeadOwner", fields: [ownerId], references: [id])
+  activities Activity[]
+  contacts   Contact[]    @relation("LeadToContact")
+
+  @@index([workspaceId])
+  @@index([status])
+  @@index([email])
+  @@index([phoneE164])
+}
+
+model Contact {
+  id             String    @id @default(cuid())
+  workspaceId    String
+  organizationId String?
+  leadId         String?
+  email          String?
+  phoneE164      String?
+  firstName      String?
+  lastName       String?
+  title          String?
+  tz             String    @default("America/New_York")
+  tags           String[]  @default([])
+  consentEmail   Boolean   @default(true)
+  consentSms     Boolean   @default(true)
+  status         String    @default("active") // active|inactive|blocked
+  registeredAt   DateTime?
+  webinarStart   DateTime?
+  callStart      DateTime?
+  lastContactedAt DateTime?
+  customFields   Json?
+  ownerId        String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  workspace      Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  organization   Organization?        @relation(fields: [organizationId], references: [id])
+  lead           Lead?                @relation("LeadToContact", fields: [leadId], references: [id])
+  owner          User?                @relation("ContactOwner", fields: [ownerId], references: [id])
+  conversations  Conversation[]
+  messages       Message[]
+  deals          Deal[]
+  activities     Activity[]
+  scheduledJobs  ScheduledJob[]
+  enrollments    SequenceEnrollment[]
+
+  @@index([workspaceId])
+  @@index([email])
+  @@index([phoneE164])
+}
+
+model Activity {
+  id          String   @id @default(cuid())
+  workspaceId String
+  contactId   String?
+  leadId      String?
+  dealId      String?
+  userId      String?
+  type        String   // note|task|call|email|sms|tag|stage|system|convert|sla_breach
+  subject     String?
+  body        Json?
+  metadata    Json?
+  occurredAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contact   Contact?  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  lead      Lead?     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  deal      Deal?     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  user      User?     @relation(fields: [userId], references: [id])
+
+  @@index([workspaceId])
+  @@index([contactId])
+  @@index([leadId])
+  @@index([dealId])
+  @@index([occurredAt])
+}
+
+model SavedView {
+  id          String   @id @default(cuid())
+  workspaceId String
+  kind        String   // leads|contacts|deals|conversations
+  name        String
+  query       Json     // serialized filters/sort
+  ownerId     String
+  isShared    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  owner     User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([kind])
+}
+
+// ==================== MESSAGING ====================
+
+model Conversation {
+  id            String    @id @default(cuid())
+  workspaceId   String
+  contactId     String
+  channel       String    // sms|email|whatsapp
+  subject       String?
+  lastMessageAt DateTime?
+  unread        Boolean   @default(false)
+  assignedTo    String?
+  status        String    @default("open") // open|closed|snoozed
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contact   Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  assignee  User?     @relation("ConversationAssignee", fields: [assignedTo], references: [id])
+  messages  Message[]
+
+  @@index([workspaceId])
+  @@index([contactId])
+  @@index([lastMessageAt])
+}
+
+model Message {
+  id             String    @id @default(cuid())
+  workspaceId    String
+  conversationId String
+  contactId      String
+  channel        String    // sms|email|whatsapp
+  direction      String    // outbound|inbound
+  subject        String?
+  text           String?
+  html           String?
+  providerId     String?   // Twilio SID / Postmark MessageID
+  status         String    @default("queued") // queued|sent|delivered|failed|bounced|opened|clicked|replied
+  eventId        String?   @unique
+  meta           Json?
+  sentAt         DateTime?
+  deliveredAt    DateTime?
+  openedAt       DateTime?
+  clickedAt      DateTime?
+  repliedAt      DateTime?
+  createdAt      DateTime  @default(now())
+
+  workspace    Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  contact      Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([conversationId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ==================== PIPELINES & DEALS ====================
+
+model Pipeline {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  stages    Stage[]
+  deals     Deal[]
+
+  @@index([workspaceId])
+}
+
+model Stage {
+  id          String   @id @default(cuid())
+  workspaceId String
+  pipelineId  String
+  name        String
+  order       Int
+  probability Int      @default(0) // 0-100% win probability
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  pipeline  Pipeline  @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  deals     Deal[]
+
+  @@index([workspaceId])
+  @@index([pipelineId])
+}
+
+model Deal {
+  id          String    @id @default(cuid())
+  workspaceId String
+  contactId   String
+  pipelineId  String
+  stageId     String
+  name        String?
+  value       Int?
+  source      String?
+  product     String?
+  closeDate   DateTime?
+  ownerId     String?
+  meta        Json?
+  wonAt       DateTime?
+  lostAt      DateTime?
+  lostReason  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  workspace  Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contact    Contact    @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  pipeline   Pipeline   @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  stage      Stage      @relation(fields: [stageId], references: [id])
+  owner      User?      @relation("DealOwner", fields: [ownerId], references: [id])
+  activities Activity[]
+
+  @@index([workspaceId])
+  @@index([stageId])
+  @@index([contactId])
+}
+
+// ==================== SEQUENCES & AUTOMATION ====================
+
+model Sequence {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  name          String
+  anchor        String   // registered_at|webinar_start|call_start
+  steps         Json     // array of SequenceStep
+  active        Boolean  @default(false)
+  enrolledCount Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  workspace     Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  scheduledJobs ScheduledJob[]
+  enrollments   SequenceEnrollment[]
+
+  @@index([workspaceId])
+  @@index([active])
+}
+
+model ScheduledJob {
+  id          String   @id @default(cuid())
+  workspaceId String
+  contactId   String
+  sequenceId  String
+  stepIndex   Int
+  channel     String   // sms|email
+  templateId  String?
+  sendAtUtc   DateTime
+  status      String   @default("scheduled") // scheduled|executing|sent|skipped|failed
+  jobKey      String   @unique
+  attempts    Int      @default(0)
+  lastError   String?
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contact   Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  sequence  Sequence  @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  template  Template? @relation(fields: [templateId], references: [id])
+
+  @@index([workspaceId])
+  @@index([sendAtUtc])
+  @@index([status])
+}
+
+model SequenceEnrollment {
+  id           String    @id @default(cuid())
+  workspaceId  String
+  contactId    String
+  sequenceId   String
+  status       String    @default("active") // active|paused|completed|stopped
+  currentStep  Int       @default(0)
+  enrolledAt   DateTime  @default(now())
+  completedAt  DateTime?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contact   Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  sequence  Sequence  @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+
+  @@unique([contactId, sequenceId])
+  @@index([workspaceId])
+  @@index([status])
+}
+
+model Template {
+  id          String   @id @default(cuid())
+  workspaceId String
+  kind        String   // email|sms
+  name        String
+  subject     String?
+  preheader   String?
+  bodyMd      String?  // for email (markdown)
+  bodyText    String?  // for sms
+  bodyMjml    String?  // for email (MJML)
+  bodyHtml    String?  // for email (compiled HTML)
+  variables   String[] @default([]) // e.g., ['name','join_url']
+  category    String?  // webinar|nurture|transactional
+  version     String   @default("1.0.0")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace     Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  scheduledJobs ScheduledJob[]
+
+  @@index([workspaceId])
+  @@index([kind])
+}
+
+// ==================== PROVIDERS & WEBHOOKS ====================
+
+model ProviderConfig {
+  id          String    @id @default(cuid())
+  workspaceId String
+  kind        String    // twilio|postmark|resend|sendblue
+  config      Json      // encrypted at rest
+  active      Boolean   @default(true)
+  verifiedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, kind])
+  @@index([workspaceId])
+}
+
+model WebhookEndpoint {
+  id          String   @id @default(cuid())
+  workspaceId String
+  provider    String   // twilio|postmark|resend
+  secret      String
+  path        String   // /api/webhooks/twilio
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+}
+
+// ==================== ASSIGNMENT & SLA ====================
+
+model AssignmentRule {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+  type        String   // round_robin|load_balanced|manual
+  userIds     String[] @default([])
+  conditions  Json?    // e.g., source='webinar', tag='hot'
+  priority    Int      @default(0)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([active])
+}
+
+model SLA {
+  id                   String   @id @default(cuid())
+  workspaceId          String
+  name                 String
+  firstResponseMinutes Int?     // SLA for first response
+  resolutionHours      Int?     // SLA for resolution
+  conditions           Json?    // e.g., tag='vip', source='paid'
+  active               Boolean  @default(true)
+  createdAt            DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([active])
+}
+
+// ==================== LEGACY FUNNELAI MODELS ====================
 
 model Project {
   id            String    @id @default(uuid())
