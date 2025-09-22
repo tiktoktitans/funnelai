@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import '@/styles/globals.css';
-import { ClerkProvider } from '@clerk/nextjs';
 import { Toaster } from '@/components/ui/toaster';
 
 const inter = Inter({
@@ -37,13 +36,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider>
-      <html lang="en" className="light">
-        <body className={`${inter.variable} font-sans antialiased bg-slate-50`}>
-          {children}
-          <Toaster />
-        </body>
-      </html>
-    </ClerkProvider>
+    <html lang="en" className="light">
+      <body className={`${inter.variable} font-sans antialiased bg-slate-50`}>
+        {children}
+        <Toaster />
+      </body>
+    </html>
   );
 }

@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { UserButton } from '@clerk/nextjs';
+import { usePathname, useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import type { User } from '@supabase/supabase-js';
 import {
   Home,
   Users,
@@ -46,7 +47,33 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+      setLoading(false);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleSignOut = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push('/sign-in');
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
@@ -132,11 +159,30 @@ export default function DashboardLayout({
         {/* User Profile */}
         <div className="p-4 border-t border-gray-100">
           <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
-            <UserButton afterSignOutUrl="/sign-in" />
+            <div className="relative group">
+              <button className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-medium">
+                {user?.email?.charAt(0).toUpperCase() || 'U'}
+              </button>
+              <div className="absolute bottom-full left-0 mb-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+                <div className="p-3">
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {user?.email || 'User'}
+                  </p>
+                  <button
+                    onClick={handleSignOut}
+                    className="mt-2 w-full text-left text-sm text-red-600 hover:text-red-700"
+                  >
+                    Sign out
+                  </button>
+                </div>
+              </div>
+            </div>
             {!collapsed && (
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">John Doe</p>
-                <p className="text-xs text-gray-500">john@example.com</p>
+                <p className="text-sm font-medium text-gray-900 truncate">
+                  {user?.user_metadata?.full_name || 'User'}
+                </p>
+                <p className="text-xs text-gray-500 truncate">{user?.email}</p>
               </div>
             )}
           </div>

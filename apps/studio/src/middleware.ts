@@ -1,10 +1,12 @@
-import { authMiddleware } from "@clerk/nextjs";
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
+import { createServerClient } from '@supabase/ssr';
 
-// Temporary middleware that bypasses auth if Clerk is not configured
-function temporaryMiddleware(req: NextRequest) {
-  const response = NextResponse.next();
+export async function middleware(request: NextRequest) {
+  const response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
 
   // Add security headers
   response.headers.set('X-Content-Type-Options', 'nosniff');
@@ -13,45 +15,51 @@ function temporaryMiddleware(req: NextRequest) {
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          );
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Protected routes
+  const protectedRoutes = ['/dashboard', '/contacts', '/inbox', '/pipelines', '/settings'];
+  const authRoutes = ['/sign-in', '/sign-up'];
+  const isProtectedRoute = protectedRoutes.some(route => request.nextUrl.pathname.startsWith(route));
+  const isAuthRoute = authRoutes.includes(request.nextUrl.pathname);
+
+  // If user is not signed in and trying to access protected route
+  if (!user && isProtectedRoute) {
+    return NextResponse.redirect(new URL('/sign-in', request.url));
+  }
+
+  // If user is signed in and trying to access auth routes
+  if (user && isAuthRoute) {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
   return response;
 }
 
-// Check if Clerk is configured
-const isClerkConfigured = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY;
-
-// Use Clerk middleware if configured, otherwise use temporary middleware
-export default isClerkConfigured ? authMiddleware({
-  publicRoutes: [
-    "/",
-    "/sign-in",
-    "/sign-up",
-    "/api/public/(.*)",
-    "/api/webhooks/(.*)"
-  ],
-  afterAuth(auth, req) {
-    const response = NextResponse.next();
-
-    // Add security headers
-    response.headers.set('X-Content-Type-Options', 'nosniff');
-    response.headers.set('X-Frame-Options', 'DENY');
-    response.headers.set('X-XSS-Protection', '1; mode=block');
-    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-    response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-
-    // If user is signed in and on sign-in page, redirect to dashboard
-    if (auth.userId && req.nextUrl.pathname === '/sign-in') {
-      return NextResponse.redirect(new URL('/dashboard', req.url));
-    }
-
-    // If user is not signed in and trying to access protected route, redirect to sign-in
-    if (!auth.userId && !auth.isPublicRoute) {
-      return NextResponse.redirect(new URL('/sign-in', req.url));
-    }
-
-    return response;
-  }
-}) : temporaryMiddleware;
-
 export const config = {
-  matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
 };
