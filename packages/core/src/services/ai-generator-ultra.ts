@@ -9,15 +9,28 @@ interface WebinarFunnelInput {
   brandName: string;
   offerName: string;
   offerPrice: string;
-  targetAudience: string;
+  targetAudience?: string;
+  audience?: string; // Support both field names
   offerPromise: string;
   webinarDate?: string;
   webinarTime?: string;
   hostName?: string;
+  brandColors?: any;
 }
 
 export class UltraAIGenerator {
   async generateCustomizedFunnel(input: WebinarFunnelInput) {
+    // Normalize the input to handle different field names
+    const targetAudience = input.targetAudience || input.audience || 'entrepreneurs';
+
+    console.log('🎯 Generating customized funnel for:', {
+      brand: input.brandName,
+      offer: input.offerName,
+      audience: targetAudience,
+      promise: input.offerPromise,
+      price: input.offerPrice
+    });
+
     const systemPrompt = `You are the world's best direct response copywriter who has generated over $100M from webinar funnels.
 
     Your copy follows these EXACT patterns from million-dollar funnels:
@@ -54,48 +67,49 @@ export class UltraAIGenerator {
 
     Brand: ${input.brandName}
     Offer: ${input.offerName}
-    Price Point: ${input.offerPrice}
-    Target Audience: ${input.targetAudience}
+    Price Point: $${input.offerPrice}
+    Target Audience: ${targetAudience}
     Main Promise: ${input.offerPromise}
     ${input.webinarDate ? `Webinar Date: ${input.webinarDate}` : 'Webinar Date: Next Thursday'}
     ${input.webinarTime ? `Webinar Time: ${input.webinarTime}` : 'Webinar Time: 7:00 PM EST'}
     ${input.hostName ? `Host: ${input.hostName}` : `Host: ${input.brandName} Founder`}
 
-    Create SPECIFIC, CUSTOMIZED content including:
+    Based on this EXACT business, create ULTRA-SPECIFIC content:
+
+    For "${input.brandName}" selling "${input.offerName}" to help "${targetAudience}" achieve "${input.offerPromise}":
 
     1. HERO SECTION:
-       - Main headline with specific income/result claim for THIS niche
-       - Subheadline that calls out the target audience and their desire
-       - Video thumbnail text overlay
-       - CTA button text
+       - Headline MUST include: The exact offer name "${input.offerName}", specific result numbers, and mention "${targetAudience}"
+       - Example format: "How [Audience] Are Making $X-$Y/Month With [Your Exact Offer Name]"
+       - DO NOT use generic terms. Use "${input.offerName}" specifically
 
-    2. PROBLEM SECTION:
-       - 5 specific pain points this audience faces
-       - Each one should twist the knife emotionally
+    2. PROBLEM SECTION (5 pain points):
+       - Each pain point MUST be specific to someone trying to "${input.offerPromise}"
+       - Reference specific tools/methods ${targetAudience} have already tried and failed with
+       - Make it PAINFUL and SPECIFIC to their situation
 
     3. SOLUTION SECTION:
-       - The unique mechanism/method name
-       - 5 transformation bullets (what they'll be able to do)
-       - Why this is different from what they've tried
+       - Call the method "${input.offerName}" specifically - not generic terms
+       - 5 bullets about what ${targetAudience} will achieve with ${input.offerName}
+       - Each bullet must relate to "${input.offerPromise}"
 
-    4. PROOF SECTION:
-       - 6 detailed testimonials with:
-         * Student name (realistic first name + last initial)
-         * Specific result achieved (relevant to this niche)
-         * Timeframe
-         * Background (to show variety)
-         * Powerful quote
+    4. PROOF SECTION (6 testimonials):
+       - Each testimonial MUST be about achieving results with something similar to "${input.offerName}"
+       - Results should be relevant to "${input.offerPromise}"
+       - Use realistic numbers based on the $${input.offerPrice} price point
 
     5. CTA SECTION:
-       - Urgency elements (countdown to webinar)
-       - Scarcity (specific number of seats)
-       - 3 fast action bonuses
+       - Reference the specific transformation: "${input.offerPromise}"
+       - Bonuses related to ${input.offerName}
 
     6. FAQ SECTION:
-       - 5 common objections for THIS specific offer
-       - Answers that remove friction
+       - Questions specific to "${input.offerName}" and "${input.offerPromise}"
+       - Address why $${input.offerPrice} is worth it
 
-    Return as JSON. Be SPECIFIC to their industry. Use power words and emotional triggers.
+    CRITICAL: Every single piece of content must be about "${input.brandName}", "${input.offerName}", and helping "${targetAudience}" to "${input.offerPromise}".
+    NO GENERIC CONTENT. NO PLACEHOLDERS. EVERYTHING CUSTOMIZED.
+
+    Return as JSON. Be SPECIFIC to their exact offer and promise.
 
     Example quality bar:
     - BAD: "Make money online"
@@ -193,23 +207,29 @@ export class UltraAIGenerator {
   }
 
   private generateHeadline(input: WebinarFunnelInput): string {
-    // Generate industry-specific headlines
+    const targetAudience = input.targetAudience || input.audience || 'Entrepreneurs';
+
+    // Generate industry-specific headlines with ACTUAL data
     const templates = [
-      `How ${input.targetAudience} Are ${input.offerPromise} With ${input.offerName}`,
-      `The Secret ${input.offerName} System That's Helping ${input.targetAudience} ${input.offerPromise}`,
+      `How ${targetAudience} Are ${input.offerPromise} With ${input.offerName}`,
+      `The Secret ${input.offerName} System That's Helping ${targetAudience} ${input.offerPromise}`,
       `Warning: This ${input.offerName} Training Reveals How To ${input.offerPromise}`,
-      `Discover How ${input.targetAudience} Are Using ${input.offerName} To ${input.offerPromise}`,
+      `Discover How ${targetAudience} Are Using ${input.offerName} To ${input.offerPromise}`,
     ];
 
-    return templates[0]; // Use first template as default
+    // Return the most compelling one
+    return templates[0];
   }
 
   private generateSubheadline(input: WebinarFunnelInput): string {
-    return `Join thousands of ${input.targetAudience} who are transforming their results without complicated strategies or huge investments`;
+    const targetAudience = input.targetAudience || input.audience || 'entrepreneurs';
+    return `Join thousands of ${targetAudience} who are transforming their results without complicated strategies or huge investments`;
   }
 
   private generatePainPoints(input: WebinarFunnelInput): string[] {
-    // Generate industry-specific pain points based on the target audience
+    const targetAudience = input.targetAudience || input.audience || 'entrepreneurs';
+
+    // Generate SPECIFIC pain points for THIS offer
     const basePoints = [
       `You've been trying to ${input.offerPromise.toLowerCase()} but nothing seems to work consistently`,
       `You're watching others in your industry succeed while you're still stuck in the same place`,
@@ -293,6 +313,7 @@ export class UltraAIGenerator {
   }
 
   private generateBonuses(input: WebinarFunnelInput): any[] {
+    const targetAudience = input.targetAudience || input.audience || 'entrepreneurs';
     return [
       {
         title: `Quick Start Guide (Value: $297)`,
@@ -300,7 +321,7 @@ export class UltraAIGenerator {
       },
       {
         title: `Private Mastermind Access (Value: $497)`,
-        description: `Connect with other successful ${input.targetAudience} implementing ${input.offerName}`,
+        description: `Connect with other successful ${targetAudience} implementing ${input.offerName}`,
       },
       {
         title: `Done-For-You Templates (Value: $197)`,
@@ -310,10 +331,11 @@ export class UltraAIGenerator {
   }
 
   private generateFAQs(input: WebinarFunnelInput): any[] {
+    const targetAudience = input.targetAudience || input.audience || 'entrepreneurs';
     return [
       {
         question: `What exactly is ${input.offerName}?`,
-        answer: `${input.offerName} is a proven system that helps ${input.targetAudience} to ${input.offerPromise}. You'll get step-by-step training, templates, and support.`,
+        answer: `${input.offerName} is a proven system that helps ${targetAudience} to ${input.offerPromise}. You'll get step-by-step training, templates, and support.`,
       },
       {
         question: "How much time will I need to invest?",
