@@ -66,7 +66,7 @@ export class ProAIGenerator {
         system: systemPrompt,
         prompt: userPrompt,
         temperature: 0.7,
-        maxTokens: 8000,
+        maxRetries: 2,
       });
 
       const specs = JSON.parse(text);
@@ -150,7 +150,7 @@ export class ProAIGenerator {
         answer: 'Experience requirements...',
       },
       {
-        question: 'What if it doesn't work for me?',
+        question: "What if it doesn't work for me?",
         answer: 'Guarantee and support details...',
       },
     ];
