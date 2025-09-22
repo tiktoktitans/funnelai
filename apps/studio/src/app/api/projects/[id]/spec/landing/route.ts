@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, supabase } from '@funnelai/database/src/supabase-client';
-import { ProAIGenerator } from '@funnelai/core/src/services/ai-generator-pro';
+import { UltraAIGenerator } from '@funnelai/core/src/services/ai-generator-ultra';
 
 // Force Node.js runtime for AI compatibility
 export const runtime = 'nodejs';
@@ -38,16 +38,19 @@ export async function POST(
       );
     }
 
-    // Generate content with PRO AI generator for better quality
-    console.log('Generating professional high-converting webinar funnel...');
-    const generator = new ProAIGenerator();
-    const specs = await generator.generateHighConvertingFunnel(landingSpec.input);
+    // Generate content with ULTRA AI generator for truly customized content
+    console.log('Generating ultra-customized high-converting webinar funnel...');
+    const generator = new UltraAIGenerator();
+    const specs = await generator.generateCustomizedFunnel(landingSpec.input);
 
     // Create structured content object
     const content = {
-      landingSpec: specs.landingSpec || specs,
-      thankYouSpec: specs.thankYouSpec,
-      metadata: specs.metadata,
+      landingSpec: specs, // The entire specs object IS the landing spec
+      thankYouSpec: {}, // Thank you page specs if needed
+      metadata: {
+        generatedAt: new Date().toISOString(),
+        version: '2.0'
+      },
       // Also generate the project files for download
       projectFiles: generator.generateComponentFiles(specs, landingSpec.input)
     };

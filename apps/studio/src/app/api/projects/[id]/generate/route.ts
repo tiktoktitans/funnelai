@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@funnelai/database/src/supabase-client';
-import { ProAIGenerator } from '@funnelai/core/src/services/ai-generator-pro';
+import { UltraAIGenerator } from '@funnelai/core/src/services/ai-generator-ultra';
 import { DeploymentService } from '@funnelai/core/src/services/deployment';
 
 // Force Node.js runtime for AI compatibility
@@ -43,10 +43,10 @@ export async function POST(
     });
 
     try {
-      // Generate content with PRO AI generator
-      console.log('Starting professional AI generation...');
-      const generator = new ProAIGenerator();
-      const specs = await generator.generateHighConvertingFunnel(landingSpec.input);
+      // Generate content with ULTRA AI generator
+      console.log('Starting ultra-customized AI generation...');
+      const generator = new UltraAIGenerator();
+      const specs = await generator.generateCustomizedFunnel(landingSpec.input);
 
       // Generate complete project files with templates
       console.log('Generating professional multi-file project structure...');
