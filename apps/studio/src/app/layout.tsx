@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import '@/styles/globals.css';
-import { Providers } from '@/components/providers';
+import { ClerkProvider } from '@clerk/nextjs';
 import { Toaster } from '@/components/ui/toaster';
 
 const inter = Inter({
@@ -10,12 +10,12 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'FunnelAI - AI-Powered Funnel Builder',
-  description: 'Generate and deploy complete marketing funnels with AI',
+  title: 'InfoOS CRM - Smart CRM for Info Products',
+  description: 'AI-powered CRM for coaches, creators, and info product sellers',
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
   openGraph: {
-    title: 'FunnelAI - AI-Powered Funnel Builder',
-    description: 'Generate and deploy complete marketing funnels with AI',
+    title: 'InfoOS CRM - Smart CRM for Info Products',
+    description: 'AI-powered CRM for coaches, creators, and info product sellers',
     type: 'website',
   },
 };
@@ -26,8 +26,8 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: 'white' },
-    { media: '(prefers-color-scheme: dark)', color: 'black' },
+    { media: '(prefers-color-scheme: light)', color: '#f8fafc' },
+    { media: '(prefers-color-scheme: dark)', color: '#f8fafc' },
   ],
 };
 
@@ -37,13 +37,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans antialiased`}>
-        <Providers>
+    <ClerkProvider>
+      <html lang="en" className="light">
+        <body className={`${inter.variable} font-sans antialiased bg-slate-50`}>
           {children}
           <Toaster />
-        </Providers>
-      </body>
-    </html>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

@@ -1,38 +1,38 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { authMiddleware } from "@clerk/nextjs";
+import { NextResponse } from 'next/server';
 
-export async function middleware(request: NextRequest) {
-  const response = NextResponse.next();
+export default authMiddleware({
+  publicRoutes: [
+    "/",
+    "/sign-in",
+    "/sign-up",
+    "/api/public/(.*)",
+    "/api/webhooks/(.*)"
+  ],
+  afterAuth(auth, req) {
+    const response = NextResponse.next();
 
-  // Add security headers
-  response.headers.set('X-Content-Type-Options', 'nosniff');
-  response.headers.set('X-Frame-Options', 'DENY');
-  response.headers.set('X-XSS-Protection', '1; mode=block');
-  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    // Add security headers
+    response.headers.set('X-Content-Type-Options', 'nosniff');
+    response.headers.set('X-Frame-Options', 'DENY');
+    response.headers.set('X-XSS-Protection', '1; mode=block');
+    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+    response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
-  const pathname = request.nextUrl.pathname;
-
-  if (pathname.startsWith('/api') && request.method === 'POST') {
-    const contentLength = request.headers.get('content-length');
-    const contentType = request.headers.get('content-type');
-
-    // Only require Content-Type if there's actually a body
-    if (contentLength && parseInt(contentLength) > 0) {
-      if (!contentType?.includes('application/json')) {
-        return NextResponse.json(
-          { error: 'Content-Type must be application/json' },
-          { status: 400 }
-        );
-      }
+    // If user is signed in and on sign-in page, redirect to dashboard
+    if (auth.userId && req.nextUrl.pathname === '/sign-in') {
+      return NextResponse.redirect(new URL('/dashboard', req.url));
     }
-  }
 
-  return response;
-}
+    // If user is not signed in and trying to access protected route, redirect to sign-in
+    if (!auth.userId && !auth.isPublicRoute) {
+      return NextResponse.redirect(new URL('/sign-in', req.url));
+    }
+
+    return response;
+  }
+});
 
 export const config = {
-  matcher: [
-    '/api/:path*',
-    '/((?!_next/static|_next/image|favicon.ico).*)',
-  ],
+  matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
 };
